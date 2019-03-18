@@ -9,8 +9,7 @@ class App extends Component {
   state = {
   	id:null,
   	note:"",
-  	notes:[],
-  	title:"Dodaj notkę"
+  	notes:[]
   }
 
   async componentDidMount() {
@@ -31,17 +30,16 @@ class App extends Component {
   	let input = {id,note}
   	if(id != null){
   		const node = await API.graphql(graphqlOperation(updateNote,{input}));
-  		console.log(node);
-		 let notes = this.state.notes.map((dane)=>{
-				if(dane.id === id){
-					return node.data.updateNote;
-				} else {
-					return dane;
-				}
-	  	});
+  		let index = this.state.notes.findIndex(item => item.id === node.data.updateNote.id);
+
+  		 let {notes} = this.state;
+		 let notesTmp = [
+		 	...notes.slice(0,index),
+		 	node.data.updateNote,
+		 	...notes.slice(index+1)
+		 ]
 	  	this.setState({
-	  		notes,
-	  		title:"Dodaj notatkę",
+	  		notes:notesTmp,
 	  		id:null
 	  	});
   	} else {
@@ -66,7 +64,6 @@ class App extends Component {
 async update(id,name){
 	this.setState({
 		note:name,
-		title:"Edytuj notatkę",
 		id
 	});
   }
@@ -76,7 +73,7 @@ async update(id,name){
       	<h1 className="code f2-1">Amplify</h1>
       	<form onSubmit={this.save.bind(this)} className="mb3">
       		<input type="text" className="pa2 f4" placeholder="Write your note" value={this.state.note} onChange={this.changeValue.bind(this)} />
-      		<button type="submit" className="pa2 f4">{this.state.title}</button>
+      		<button type="submit" className="pa2 f4">{this.state.id ? "Edytuj notatkę ": "Dodaj notatkę"}</button>
       	</form>
       	<div>
 	      	<ul>
