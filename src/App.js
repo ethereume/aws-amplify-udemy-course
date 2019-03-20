@@ -3,7 +3,7 @@ import {withAuthenticator} from "aws-amplify-react";
 import {API,graphqlOperation} from 'aws-amplify';
 import {createNote,deleteNote,updateNote} from "./graphql/mutations";
 import {listNotes} from "./graphql/queries";
-import {onCreateNote,onDeleteNote} from "./graphql/subscriptions";
+import {onCreateNote,onDeleteNote,onUpdateNote} from "./graphql/subscriptions";
 
 class App extends Component {
   
@@ -36,16 +36,32 @@ class App extends Component {
   				...notes.splice(0,index),
   				...notes.splice(index+1)
   			];
-  			console.log(notesNew);
   			this.setState({
   				notes:notesNew
   			})
+  		}
+  	});
+  	this.updateNotesListener = API.graphql(graphqlOperation(onUpdateNote)).subscribe({
+  		next:noteData => {
+			let index = this.state.notes.findIndex(item => item.id === noteData.value.data.onUpdateNote.id);
+	  		let {notes} = this.state;
+			let notesTmp = [
+			 	...notes.slice(0,index),
+			 	noteData.value.data.onUpdateNote,
+			 	...notes.slice(index+1)
+			 ]
+		  	this.setState({
+		  		notes:notesTmp,
+		  		id:null,
+		  		note:""
+		  	});
   		}
   	});
   }
   componentWillUnmount(){
   	this.createNotesListener.unsubscribe();
   	this.deleteNotesListener.unsubscribe();
+  	this.updateNotesListener.unsubscribe();
   }
   getNoted = async () =>{
 	const result = await API.graphql(graphqlOperation(listNotes));
@@ -64,19 +80,7 @@ class App extends Component {
   	const {note,id} = this.state;
   	let input = {id,note}
   	if(id != null){
-  		const node = await API.graphql(graphqlOperation(updateNote,{input}));
-  		let index = this.state.notes.findIndex(item => item.id === node.data.updateNote.id);
-
-  		 let {notes} = this.state;
-		 let notesTmp = [
-		 	...notes.slice(0,index),
-		 	node.data.updateNote,
-		 	...notes.slice(index+1)
-		 ]
-	  	this.setState({
-	  		notes:notesTmp,
-	  		id:null
-	  	});
+  		await API.graphql(graphqlOperation(updateNote,{input}));
   	} else {
   		await API.graphql(graphqlOperation(createNote,{input}));
 	  	this.setState({	note:""});
